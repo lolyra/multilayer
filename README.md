@@ -34,4 +34,6 @@ The following lines are an example for KTH-TIPS2-b:
 
 After downloading and extracting, run the code 
 
-`$ python3 <path to main.py>`.
+`$ python3 <path to main.py>`
+
+The results will be saved to a directory _results_ inside the specied directory to read/write.
