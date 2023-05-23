@@ -1,4 +1,4 @@
-# Multilayer Deep Feature Extraction for Visual Texture Recognition
+# MultiFisherNet: a multilevel approach to deep filter banks in texture recognition
 
 ## Preparation
 
