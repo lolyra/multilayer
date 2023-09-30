@@ -3,7 +3,7 @@
 ## Preparation
 
 In order to run the code, proceed to install the required packages. 
-Before installing, we advise (creating a virtual environment)[https://docs.python.org/3/library/venv.html].
+Before installing, we advise [creating a virtual environment](https://docs.python.org/3/library/venv.html).
 
 After creating the virtual environment, activate it and install the required packages.
 
