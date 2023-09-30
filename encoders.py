@@ -16,7 +16,7 @@ class EncoderGMM:
         x = x.reshape(-1,D)
         # GMM
         self.gmm = GaussianMixture(n_components=self.n_kernels,covariance_type='diag', 
-        max_iter=1000, random_state=0, reg_covar=1e-4*x.std(axis=0).max()).fit(x, y)
+        max_iter=1000, random_state=0, verbose=10, reg_covar=1e-4*x.std(axis=0).max()).fit(x, y)
         self.fitted = True
         return self
     
