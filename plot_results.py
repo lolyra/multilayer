@@ -68,12 +68,12 @@ def main(database, modelname, resolution, kernels, layer_list, pooling, snr, pat
 if __name__ == "__main__":
     p = os.path.join(os.environ['HOME'],'data','results')    
 
-    main('kth', # Dataset
+    main('fmd', # Dataset
          'tf_efficientnet_b5', # CNN backbone
          320, # Image width
          16, # Number of kernels
          [3,4], # Indexes of feature maps used
-         'pca', # Diimensionality redution method
-         60, # SNR
+         'ae', # Diimensionality redution method
+         None, # SNR
          p # Path to results
         )

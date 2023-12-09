@@ -129,7 +129,7 @@ def process_autoencoder(x, layer:int, round:int, outsize:int, path:str):
     x = x.reshape(-1,s[2])
     n = 100
 
-    filename = os.path.join(path,"ae/{round}_{layer}.pkl")
+    filename = os.path.join(path,f"ae/{round}_{layer}.pkl")
     if os.path.exists(filename):
         ae = pk.load(open(filename,'rb')).to(DEVICE)
     else:
@@ -144,6 +144,7 @@ def process_autoencoder(x, layer:int, round:int, outsize:int, path:str):
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
+        pk.dump(ae, open(filename,'wb'))
 
     with torch.no_grad():
         for i in range(0,x.shape[0],n):
@@ -236,7 +237,12 @@ def normalize(x):
     return x
 
 
-def classifier(dataname:str, modelname:str, resolution:int, nkernels:int, layers:str, method:str, path=''):
+def classifier(dataname:str, modelname:str, resolution:int, nkernels:int, layers:str, method:str, classifiername:str, path=''):
+    from sklearn.svm import LinearSVC, SVC
+    from sklearn.neural_network import MLPClassifier
+    from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+    from sklearn.base import clone
+
     n = NSPLITS.get(dataname,10)
 
     print("Training classifier")
@@ -246,16 +252,25 @@ def classifier(dataname:str, modelname:str, resolution:int, nkernels:int, layers
             x = normalize(data['x'])
             y = data['y']
 
-        svm = LinearSVC(max_iter=5000,tol=0.001,dual=True,class_weight='balanced')
-        svm.fit(x,y)
-        pk.dump(svm, open(os.path.join(path,f"svm/fv_{i}.pkl"),"wb"))
+        if classifiername == 'linear_svm':
+            clf = LinearSVC(max_iter=5000,tol=0.001,dual=True,class_weight='balanced')
+        elif classifiername == 'rbf_svm':
+            clf = SVC(max_iter=5000, class_weight='balanced')
+        elif classifiername == 'mlp':
+            clf = MLPClassifier(random_state=0)
+        elif classifiername == 'lda':
+            clf = LinearDiscriminantAnalysis()
+        else:
+            raise Exception("Invalid classifier option")
+        clf.fit(x,y)
+        pk.dump(clf, open(os.path.join(path,f"classifier/{classifiername}_fv_{i}.pkl"),"wb"))
 
         with np.load(os.path.join(path,f"fcon/train_{i}.npz")) as data:
             z = normalize(data['x'])
 
         x = np.concatenate((z,x),axis=1)
-        svm = LinearSVC(max_iter=5000,tol=0.001,dual=True,class_weight='balanced')
-        svm.fit(x,y)
-        pk.dump(svm, open(os.path.join(path,f"svm/fcfv_{i}.pkl"),"wb"))
+        clf = clone(clf)
+        clf.fit(x,y)
+        pk.dump(clf, open(os.path.join(path,f"classifier/{classifiername}_fcfv_{i}.pkl"),"wb"))
     
     print("{:<100}".format("Done"))

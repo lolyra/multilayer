@@ -98,3 +98,16 @@ class EncoderGMM:
         v = np.sum(p,axis=1)
 
         return v
+
+import torch
+class AutoEncoder(torch.nn.Module):
+    def __init__(self, input_dim, output_dim):
+        super().__init__()
+
+        self.encoder = torch.nn.Linear(input_dim, output_dim)
+        self.decoder = torch.nn.Linear(output_dim, input_dim)
+
+    def forward(self, x):
+        x = self.encoder(x)
+        x = self.decoder(x)
+        return x

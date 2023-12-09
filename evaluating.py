@@ -10,7 +10,7 @@ import pickle as pk
 def add_noise(x):
     return x
 
-def classify(dataname, modelname, resolution, kernels, layers, method, path, snr:float=None):
+def classify(dataname, modelname, resolution, kernels, layers, method, classifiername, path, snr:float=None):
 
     ds_data,_ = datasets.load(dataname, size=resolution, path=path, bsize=1, shuffle=False, snr=snr)
     model_fc = timm.create_model(modelname, pretrained=True, num_classes=0).eval().to(DEVICE)
@@ -44,7 +44,6 @@ def classify(dataname, modelname, resolution, kernels, layers, method, path, snr
     for i in range(n):
         enc = EncoderGMM(kernels)
         gmmfile = os.path.join(path,f"gmm/train_{i}.pkl")
-        pcafile = os.path.join(path,f"pca/{i}_{{}}")
         enc.gmm = pk.load(open(gmmfile,'rb'))
         enc.fitted = True
 
@@ -56,6 +55,12 @@ def classify(dataname, modelname, resolution, kernels, layers, method, path, snr
                 pcas[l] = pk.load(open(pcafile,'rb'))
                 mdls[l] = lambda x: pcas[l].transform(x)
                 continue
+            if method == 'ae':
+                pcafile = os.path.join(path,f"ae/{i}_{l}.pkl")
+                pcas[l] = pk.load(open(pcafile,'rb'))
+                pcas[l].to('cpu')
+                mdls[l] = lambda x: pcas[l].encoder(x)
+                continue
             insize = layers_sizes[l]
             stride = insize//outsize
             kernel = insize-stride*outsize+1
@@ -64,8 +69,8 @@ def classify(dataname, modelname, resolution, kernels, layers, method, path, snr
             else:
                 mdls[l] = torch.nn.AvgPool2d((1,kernel),(1,stride),0)
 
-        svm_fv = pk.load(open(os.path.join(path,f"svm/fv_{i}.pkl"),'rb'))
-        svm_fcfv = pk.load(open(os.path.join(path,f"svm/fcfv_{i}.pkl"),'rb'))
+        clf_fv = pk.load(open(os.path.join(path,f"classifier/{classifiername}_fv_{i}.pkl"),'rb'))
+        clf_fcfv = pk.load(open(os.path.join(path,f"classifier/{classifiername}_fcfv_{i}.pkl"),'rb'))
 
         total = len(ds_data[i]['val'].dataset)
         y_true = np.zeros(total)
@@ -93,8 +98,8 @@ def classify(dataname, modelname, resolution, kernels, layers, method, path, snr
             x_fv = normalize(enc.transform(x_fv))
             x = np.concatenate((x_fc,x_fv),axis=1)
 
-            y_fv[count-1] = svm_fv.predict(x_fv)[0]
-            y_fcfv[count-1] = svm_fcfv.predict(x)[0]
+            y_fv[count-1] = clf_fv.predict(x_fv)[0]
+            y_fcfv[count-1] = clf_fcfv.predict(x)[0]
             y_true[count-1] = labels.numpy()[0]
 
         layer = ''.join([str(l) for l in layers])
