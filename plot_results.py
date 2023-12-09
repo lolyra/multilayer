@@ -66,6 +66,8 @@ def main(database, modelname, resolution, kernels, layer_list, pooling, snr, pat
     
 
 if __name__ == "__main__":
+    p = os.path.join(os.environ['HOME'],'data','results')    
+
     main('kth', # Dataset
          'tf_efficientnet_b5', # CNN backbone
          320, # Image width
@@ -73,5 +75,5 @@ if __name__ == "__main__":
          [3,4], # Indexes of feature maps used
          'pca', # Diimensionality redution method
          60, # SNR
-         '/var/tmp/lolyra/data/results' # Path to results
+         p # Path to results
         )

@@ -123,6 +123,40 @@ def process_layer(x,outsize:int,method:str):
     return y
 
 
+def process_autoencoder(x, layer:int, round:int, outsize:int, path:str):
+    s = x.shape
+    x = torch.tensor(x, dtype=torch.float)
+    x = x.reshape(-1,s[2])
+    n = 100
+
+    filename = os.path.join(path,"ae/{round}_{layer}.pkl")
+    if os.path.exists(filename):
+        ae = pk.load(open(filename,'rb')).to(DEVICE)
+    else:
+        ae = encoders.AutoEncoder(s[2], outsize).to(DEVICE)
+        optimizer = torch.optim.Adam(ae.parameters())
+        loss_fn = torch.nn.MSELoss()
+        for epoch in range(20):
+            for i in range(0,x.shape[0],n):
+                z = x[i:i+n].to(DEVICE)
+                y = ae(z)
+                loss = loss_fn(y, z)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+    with torch.no_grad():
+        for i in range(0,x.shape[0],n):
+            o = ae.encoder(x[i:i+n].to(DEVICE)).cpu().numpy()
+            if i == 0:
+                y = o
+            else:
+                y = np.append(y,o,axis=0)
+    del ae
+    y = y.reshape(s[0],-1,outsize)
+    return y
+
+
 def conv_output(dataname:str, modelname:str, resolution:int, layerlist:list[int], method:str='pca', path:str=''):
 
     model = timm.create_model(modelname, pretrained=True, features_only=True).eval()
@@ -147,6 +181,8 @@ def conv_output(dataname:str, modelname:str, resolution:int, layerlist:list[int]
                         x[layer] = process_pca(x[layer],layer,i,ncomponents,path)
                     elif method in ['max','avg']:
                         x[layer] = process_layer(x[layer],ncomponents,method)
+                    elif method == 'ae':
+                        x[layer] = process_autoencoder(x[layer],layer,i,ncomponents,path)
                     else:
                         raise Exception("Invalid option")
                     xt = np.concatenate((xt,x[layer]),axis=1)

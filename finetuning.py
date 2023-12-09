@@ -3,6 +3,7 @@ import timm
 import torch
 import numpy
 from torch import nn
+import os
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -34,15 +35,15 @@ def test_loop(dataloader, model, loss_fn):
     return correct
 
 
-def train_and_test(modelname, dataname):
+def train_and_test(modelname, dataname, path):
     print("{:<14} {:<10}".format(modelname, dataname))
 
     stoplayer = {
         'tf_efficientnet_b5': 'conv_head',
         'convnext_tiny': 'head',
-        'resnet50': 'fc',
+        'regnety_064': 'head',
     }
-    ds_data, ds_class = datasets.load(dataname, 224, '/var/tmp/lolyra/artigo', 100)
+    ds_data, ds_class = datasets.load(dataname, 224, path, 100)
     c = numpy.zeros(len(ds_data))
     for i in range(len(ds_data)):
         train_dataloader = ds_data[i]['train']
@@ -65,6 +66,8 @@ def train_and_test(modelname, dataname):
     print("{:.1f} +- {:.1f}".format(100*c.mean(),196*c.std()/numpy.sqrt(len(ds_data))))
 
 if __name__ == "__main__":
-    for dataname in ['kth']:
-        for modelname in ['convnext_tiny','resnet50']:
-            train_and_test(modelname, dataname)
+    path = os.path.join(os.environ['HOME'],'data')
+    dataname = 'fmd'
+    modelname = 'convnext_tiny'
+    
+    train_and_test(modelname, dataname, path)
